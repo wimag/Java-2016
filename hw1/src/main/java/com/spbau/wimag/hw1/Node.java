@@ -68,7 +68,7 @@ public class Node {
             return null;
         }
         Node result = insert(c);
-        result.addToEntryCount(n);
+        result.addToEntryCount(n-1);
         return result;
     }
 
@@ -129,7 +129,7 @@ public class Node {
         entries--;
     }
 
-    public void addToEntryCount(int n){
+    private void addToEntryCount(int n){
         entries += n;
     }
 
