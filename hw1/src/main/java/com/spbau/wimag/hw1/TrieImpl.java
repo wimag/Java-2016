@@ -122,7 +122,7 @@ public class TrieImpl implements Trie{
                 queue.offer(nr.getValue());
             }
         }
-        writer.close();
+        writer.flush();
     }
 
     @Override
@@ -145,9 +145,9 @@ public class TrieImpl implements Trie{
     }
 
 
-    private static class Reader{
-        BufferedReader reader;
-        StringTokenizer tokenizer;
+    private final static class Reader{
+        private final BufferedReader reader;
+        private StringTokenizer tokenizer;
 
         public Reader(InputStream in){
             reader = new BufferedReader(new InputStreamReader(in));

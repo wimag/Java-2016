@@ -63,12 +63,12 @@ public class Node {
      * either existing or newly created)
      * @see Node#getEntryCount()
      */
-    public Node insert(char c, int n){
-        if(n <= 0){
+    public Node insert(char c, int n) {
+        if (n <= 0) {
             return null;
         }
         Node result = insert(c);
-        result.addToEntryCount(n-1);
+        result.addToEntryCount(n - 1);
         return result;
     }
 
@@ -110,6 +110,18 @@ public class Node {
     }
 
     /**
+     * Returns set of keys for children nodes
+     * Set would be more appropriate, but
+     * complex data structures are banned
+     *
+     * @return array of children keys
+     */
+    public List<NodeRecord> getChildrenRecords() {
+        return children;
+    }
+
+
+    /**
      * Describes entryCount of given node - number
      * of times, this Node was added
      * basically, number of words, that start with
@@ -129,20 +141,8 @@ public class Node {
         entries--;
     }
 
-    private void addToEntryCount(int n){
+    private void addToEntryCount(int n) {
         entries += n;
-    }
-
-
-    /**
-     * Returns set of keys for children nodes
-     * Set would be more appropriate, but
-     * complex data structures are banned
-     *
-     * @return array of children keys
-     */
-    public List<NodeRecord> getChildrenRecords(){
-        return children;
     }
 
     /**
