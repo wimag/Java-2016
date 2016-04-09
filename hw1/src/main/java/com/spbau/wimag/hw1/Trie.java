@@ -5,7 +5,7 @@ package com.spbau.wimag.hw1;
  * interface provided by task statement
  */
 
-public interface Trie {
+public interface Trie extends StreamSerializable{
 
     /**
      * Expected complexity: O(|element|)

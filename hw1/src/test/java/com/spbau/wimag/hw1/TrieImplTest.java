@@ -1,5 +1,11 @@
 package com.spbau.wimag.hw1;
 
+import org.junit.Test;
+
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -48,7 +54,6 @@ public class TrieImplTest {
     @org.junit.Test
     public void testContains() throws Exception {
         Trie trie = new TrieImpl();
-
         trie.add("abc");
         trie.add("def");
         trie.add("abcdef");
@@ -93,5 +98,61 @@ public class TrieImplTest {
         assertTrue(trie.remove("ad"));
 
         assertEquals(2, trie.howManyStartsWithPrefix("a"));
+    }
+
+
+    @org.junit.Test
+    public void testSerialize() throws Exception {
+        PipedInputStream in = new PipedInputStream();
+        PipedOutputStream out = new PipedOutputStream(in);
+
+        Trie trie = new TrieImpl();
+
+        trie.serialize(out);
+        trie.deserialize(in);
+
+        assertTrue(trie.add("abc"));
+        assertTrue(trie.add("def"));
+        assertTrue(trie.add("abacabadabacaba"));
+        assertFalse(trie.add("abacabadabacaba"));
+        assertTrue(trie.add("abacabadabacaba1"));
+        assertTrue(trie.add("abacabadabacaba2"));
+        assertTrue(trie.add("abacabadabacaba3"));
+        assertTrue(trie.add("abacabadabacaba4"));
+
+
+        trie.serialize(out);
+        trie.deserialize(in);
+
+        assertEquals(7, trie.size());
+
+        assertTrue(trie.contains("abc"));
+        assertTrue(trie.contains("def"));
+        assertFalse(trie.contains("a"));
+        assertFalse(trie.contains("de"));
+        assertFalse(trie.contains(""));
+        assertFalse(trie.contains("abcdef"));
+
+        trie.add("ad");
+
+        trie.serialize(out);
+        trie.deserialize(in);
+
+
+        assertEquals(8, trie.size());
+        assertEquals(7, trie.howManyStartsWithPrefix("a"));
+        assertEquals(1, trie.howManyStartsWithPrefix("d"));
+
+        assertFalse(trie.contains("a"));
+        assertFalse(trie.contains("ab"));
+
+        trie.add("");
+
+        trie.serialize(out);
+        trie.deserialize(in);
+
+        assertEquals(9, trie.size());
+        assertEquals(9, trie.howManyStartsWithPrefix(""));
+        assertTrue(trie.contains(""));
     }
 }

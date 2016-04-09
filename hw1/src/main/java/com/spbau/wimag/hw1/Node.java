@@ -52,6 +52,27 @@ public class Node {
     }
 
     /**
+     * Inserts n copies of character as a child
+     * of this Node. If a child node with given
+     * character key already exists - increases
+     * it's internal entry counter by n
+     *
+     * @param c - character key for new child
+     * @param n - amount of copies to be inserted
+     * @return - child with corresponding key(
+     * either existing or newly created)
+     * @see Node#getEntryCount()
+     */
+    public Node insert(char c, int n) {
+        if (n <= 0) {
+            return null;
+        }
+        Node result = insert(c);
+        result.addToEntryCount(n - 1);
+        return result;
+    }
+
+    /**
      * remove a child node for given character key:
      * if there is a child with given key - reduce it's
      * entryCount by one. if it has no more entries - remove
@@ -89,6 +110,18 @@ public class Node {
     }
 
     /**
+     * Returns set of keys for children nodes
+     * Set would be more appropriate, but
+     * complex data structures are banned
+     *
+     * @return array of children keys
+     */
+    public List<NodeRecord> getChildrenRecords() {
+        return children;
+    }
+
+
+    /**
      * Describes entryCount of given node - number
      * of times, this Node was added
      * basically, number of words, that start with
@@ -106,6 +139,10 @@ public class Node {
 
     private void decreaseEntryCount() {
         entries--;
+    }
+
+    private void addToEntryCount(int n) {
+        entries += n;
     }
 
     /**
