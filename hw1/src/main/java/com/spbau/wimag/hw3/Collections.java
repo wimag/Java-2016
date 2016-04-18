@@ -40,7 +40,7 @@ public class Collections {
         return takeWhile(pred.not(), collection);
     }
 
-    public static <T, U> U foldr(Function2<? super T, ? super U, U> func, U init, Iterable<T> collection) {
+    public static <T, U> U foldr(Function2<? super T, U, U> func, U init, Iterable<T> collection) {
         List<T> listRepresentation = new ArrayList<>();
         for (T item : collection) {
             listRepresentation.add(item);
@@ -56,7 +56,7 @@ public class Collections {
         return result;
     }
 
-    public static <T, U> T foldl(Function2<? super T, ? super U, T> func, T init, Iterable<U> collection) {
+    public static <T, U> T foldl(Function2<T, ? super U, T> func, T init, Iterable<U> collection) {
         T result = init;
         for (U item : collection) {
             result = func.apply(result, item);

@@ -22,7 +22,7 @@ public abstract class Predicate<T> extends Function1<T, Boolean> {
         return new Predicate<T>() {
             @Override
             public Boolean apply(T arg) {
-                return !(Predicate.this.apply(arg));
+                return !Predicate.this.apply(arg);
             }
         };
     }

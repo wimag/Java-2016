@@ -16,7 +16,7 @@ public abstract class Function2<T, U, R> {
         };
     }
 
-    public <S extends T> Function1<U, R> bind1(S arg1) {
+    public Function1<U, R> bind1(T arg1) {
         return new Function1<U, R>() {
             @Override
             public R apply(U arg2) {
@@ -25,7 +25,7 @@ public abstract class Function2<T, U, R> {
         };
     }
 
-    public <S extends U> Function1<T, R> bind2(S arg2) {
+    public Function1<T, R> bind2(U arg2) {
         return new Function1<T, R>() {
             @Override
             public R apply(T arg1) {
