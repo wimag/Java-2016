@@ -17,6 +17,10 @@ public class NodeRecord {
         return value;
     }
 
+    public char getKey() {
+        return key;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
