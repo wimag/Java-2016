@@ -16,6 +16,8 @@ class HelpCommand implements Command {
                 "gut branch -b \"branch name\" - to create branch \n " +
                 "gut branch -d -b \"branch name\" - to delete branch \n" +
                 "gut log - to show log \n" +
-                "gut merge \"branch\" - to merge specified branch into current \n");
+                "gut merge \"branch\" - to merge specified branch into current \n" +
+                "gut add file - to add file to repository\n" +
+                "gut status - to see changed/removed/untracked files");
     }
 }

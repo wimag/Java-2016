@@ -50,7 +50,7 @@ class BranchCommand implements Command {
             if (create) {
                 stateManager.createBranch(branchName);
             } else {
-                if (branchName.equals("Mater")) {
+                if (branchName.equals("Master")) {
                     System.out.println("Can not delete master branch");
                     return;
                 }

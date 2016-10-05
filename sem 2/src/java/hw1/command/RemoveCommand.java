@@ -8,34 +8,28 @@ import hw1.structure.StateManager;
 import java.io.IOException;
 
 /**
- * Created by Mark on 25.09.2016.
- * <p>
- * represents merge command
+ * Created by Mark on 05.10.2016.
  */
-class MergeCommand implements Command {
-    private final String branch;
+public class RemoveCommand implements Command {
+    private final String[] params;
 
-    public MergeCommand(String[] params) {
-        if (params.length != 1) {
-            branch = null;
-        } else {
-            branch = params[0];
-        }
+    public RemoveCommand(String[] params){
+        this.params = params;
     }
 
     @Override
     public void execute() throws MalformedCommandException {
+        if(params.length != 1){
+            throw new MalformedCommandException("Remove command takes exactly one argument");
+        }
         if (!GutUtils.repoInitialized()) {
             throw new NoSuchRepositoryException();
         }
-        if (branch == null) {
-            throw new MalformedCommandException("merge command expects exactly one argument");
-        }
         try {
             StateManager stateManager = StateManager.load();
-            stateManager.mergeBranch(branch);
+            stateManager.remove(params[0]);
             stateManager.close();
-            System.out.println("Merge successful. You can now commit changes");
+            System.out.println("File successfully removed");
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }

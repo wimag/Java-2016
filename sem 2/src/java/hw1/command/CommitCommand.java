@@ -46,8 +46,9 @@ class CommitCommand implements Command {
         }
         try {
             StateManager stateManager = StateManager.load();
-            stateManager.commit(new Commit(message, stateManager.getHeadId(), stateManager.getCurrentBranch()));
+            String commitId = stateManager.commit(message);
             stateManager.close();
+            System.out.println("Added new commit. Current head is " + commitId + "\n");
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }

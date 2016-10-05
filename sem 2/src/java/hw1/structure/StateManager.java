@@ -1,9 +1,11 @@
 package hw1.structure;
 
 import hw1.GutUtils;
+import hw1.command.Command;
 import hw1.exceptions.DuplicateBranchException;
 import hw1.exceptions.MalformedCommandException;
 import hw1.exceptions.NoSuchBranchException;
+import hw1.exceptions.UntrackedFileException;
 import org.apache.commons.io.FileUtils;
 
 import java.io.*;
@@ -11,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by Mark on 22.09.2016.
@@ -21,6 +24,7 @@ public class StateManager implements Serializable {
     private final transient static String filename = "tree.dump";
     private Map<String, Commit> idToCommit = new HashMap<>();
     private Set<Branch> branches = new HashSet<>();
+    private Set<String> trackedFiles = new HashSet<>();
     private String headId = null;
     private Branch currentBranch = null;
 
@@ -61,7 +65,7 @@ public class StateManager implements Serializable {
     /**
      * delete a branch with given name
      *
-     * @param branchName - name of branchName to delete
+     * @param branchName - name of branch to delete
      */
     public void deleteBranch(String branchName) throws IOException {
         Iterator it = idToCommit.entrySet().iterator();
@@ -69,7 +73,6 @@ public class StateManager implements Serializable {
             Map.Entry current = (Map.Entry) it.next();
             Commit commit = (Commit) current.getValue();
             if (commit.branchName.equals(branchName)) {
-                deleteBackup(commit);
                 it.remove();
             }
         }
@@ -77,17 +80,28 @@ public class StateManager implements Serializable {
     }
 
     /**
-     * add Given commit to our structure
-     *
-     * @param commit - freshly created commit
+     * create a commit with given message
+     * @param message - message appended to new commit
+     * @return id of new commit
+     * @throws IOException
      */
-    public void commit(Commit commit) throws IOException {
-        idToCommit.put(commit.id, commit);
-        createBackup(commit);
-        headId = commit.id;
-        currentBranch.setHead(commit.id);
-        System.out.println("Added new commit. Current head is " + commit.id + "\n");
+    public String commit(String message) throws IOException {
+        Commit newCommit = new Commit(message, headId, currentBranch);
+        commit(newCommit);
+        return newCommit.id;
     }
+
+    /**
+     * init this repository
+     * @param masterBranchName - name of master branch
+     * @throws DuplicateBranchException
+     * @throws IOException
+     */
+    public void init(String masterBranchName) throws DuplicateBranchException, IOException {
+        createBranch(masterBranchName);
+        commit(new Commit("Initial commit", masterBranchName));
+    }
+
 
     /**
      * Merge other branch into current one.
@@ -103,6 +117,44 @@ public class StateManager implements Serializable {
             throw new MalformedCommandException("Can not merge branch into itself");
         }
         merge(idToCommit.get(currentBranch.getHead()), idToCommit.get(toMerge.getHead()));
+    }
+
+
+    /**
+     * mark file as tracked
+     * @param path to file
+     */
+    public void add(String path) {
+        if(Files.exists(Paths.get(path))){
+            trackedFiles.add(new File(path).getAbsolutePath());
+        }
+    }
+
+    /**
+     * force remove file from repository
+     * and file system
+     * @param path to file
+     * @throws IOException
+     */
+    public void remove(String path) throws IOException {
+        File file = new File(path);
+        trackedFiles.remove(file.getAbsolutePath());
+        if(Files.exists(Paths.get(path))){
+            FileUtils.forceDelete(file);
+        }
+    }
+
+    /**
+     * reset file to it latest repository version
+     * @param path to file to reset
+     */
+    public void reset(String path) throws UntrackedFileException, IOException {
+        String absolutePath = new File(path).getAbsolutePath();
+        Commit head = idToCommit.get(headId);
+        if(!head.containsFile(absolutePath)){
+            throw new UntrackedFileException();
+        }
+        FileUtils.copyFile(new File(getFileRevisoinPath(head.getFileRevision(absolutePath))), new File(path));
     }
 
     /**
@@ -173,6 +225,73 @@ public class StateManager implements Serializable {
     }
 
     /**
+     * get list of tracked files that changes
+     * from last commit
+     * @return list of changed files
+     * @throws IOException
+     */
+    public List<String> getChangedFiles() throws IOException {
+        List<String> result = new ArrayList<>();
+        Commit head = idToCommit.get(headId);
+        for(String file: trackedFiles){
+            String revision = head.getFileRevision(file);
+            if(head.containsFile(file) && !GutUtils.equalFiles(file, getFileRevisoinPath(revision))){
+                result.add(file);
+            }else if(!head.containsFile(file) && Files.exists(Paths.get(file))){
+                result.add(file);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * get List of files that were deleted from last commit
+     * @return list of file paths
+     */
+    public List<String> getDeletedFiles(){
+        return trackedFiles.stream().filter(x -> !Files.exists(Paths.get(x))).collect(Collectors.toList());
+    }
+
+    /**
+     * get List of files that are not in the repository
+     * @return list of file paths
+     */
+    public List<String> getUntrackedFiles(){
+        return FileUtils.listFiles(new File(GutUtils.getCurrentPath()), null, true).stream()
+                .map(File::getAbsolutePath)
+                .filter(x -> !trackedFiles.contains(x) && !x.startsWith(GutUtils.getRepoPath()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * remove all untracked files from project
+     */
+    public void cleanProjectFiles() {
+        File folder = new File(GutUtils.getCurrentPath());
+        FileUtils.iterateFiles(folder, null, true).forEachRemaining((File x) -> {
+            if (!x.getAbsolutePath().startsWith(GutUtils.getRepoPath()) && !trackedFiles.contains(x)) {
+                try {
+                    FileUtils.forceDelete(x);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    /**
+     * add Given commit to our structure
+     *
+     * @param commit - commit to be added to vcs
+     */
+    private void commit(Commit commit) throws IOException {
+        idToCommit.put(commit.id, commit);
+        createBackup(commit);
+        headId = commit.id;
+        currentBranch.setHead(commit.id);
+    }
+
+    /**
      * Get branch with given name
      *
      * @param name - name of branch to find
@@ -189,68 +308,46 @@ public class StateManager implements Serializable {
     }
 
     /**
-     * Restore a single commit files
-     *
-     * @param commit - commit ot restore
-     * @throws IOException
-     */
-    private void restoreBackup(Commit commit) throws IOException {
-        clearProjectFiles();
-        Path path = Paths.get(GutUtils.getRepoPath(), commit.id);
-        File dst = new File(GutUtils.getCurrentPath());
-        File src = new File(path.toString());
-        FileUtils.copyDirectory(src, dst, pathname -> path.startsWith(GutUtils.getRepoPath()));
-    }
-
-    /**
-     * remove all files from current state
-     */
-    private void clearProjectFiles() {
-        File folder = new File(GutUtils.getCurrentPath());
-        FileUtils.iterateFiles(folder, null, true).forEachRemaining((File x) -> {
-            if (!x.getAbsolutePath().startsWith(GutUtils.getRepoPath())) {
-                try {
-                    FileUtils.forceDelete(x);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
-    /**
      * Create backup of files at current state
      *
      * @param commit - current commit
      * @throws IOException
      */
     private void createBackup(Commit commit) throws IOException {
-        Path path = Paths.get(GutUtils.getRepoPath(), commit.id);
-        if (!Files.exists(path)) {
-            Files.createDirectories(path);
+        Commit parent = idToCommit.get(commit.parentId);
+        for(String file: trackedFiles){
+            if (!Files.exists(Paths.get(file))){
+                continue;
+            }
+            String revision;
+            String parentRevision = parent.getFileRevision(file);
+            if(parent.containsFile(file) && GutUtils.equalFiles(getFileRevisoinPath(parentRevision), file)){
+                revision = parent.getFileRevision(file);
+            }else{
+                revision = UUID.randomUUID().toString();
+                FileUtils.copyFile(new File(file), new File(getFileRevisoinPath(revision)));
+            }
+            commit.addFile(file, revision);
         }
-        File src = new File(GutUtils.getCurrentPath());
-        File dst = new File(path.toString());
-        FileUtils.copyDirectory(src, dst, pathname -> !pathname.getAbsolutePath().startsWith(GutUtils.getRepoPath()));
     }
 
     /**
-     * Delete files of given commit
+     * Restore a single commit files
      *
-     * @param commit - commit to clear
-     * @throws IOException - if IO operations were
-     *                     not successful
+     * @param commit - commit ot restore
+     * @throws IOException
      */
-    private void deleteBackup(Commit commit) throws IOException {
-        Path path = Paths.get(GutUtils.getRepoPath(), commit.id);
-        if (Files.exists(path)) {
-            FileUtils.deleteDirectory(new File(path.toString()));
+    private void restoreBackup(Commit commit) throws IOException {
+        for(String file: commit.getFiles()){
+            String backupPath = getFileRevisoinPath(commit.getFileRevision(file));
+            FileUtils.copyFile(new File(backupPath), new File(file));
         }
     }
 
+
     /**
-     * Merge two commits. For now - simpliest policy ever:
-     * checkout first commit. then copy all files of second commit.
+     * Merge two commits. For now - simplest policy ever:
+     * checkout first commit. then copy all absent files of second commit.
      * override conflicts
      *
      * @param commit1
@@ -259,11 +356,20 @@ public class StateManager implements Serializable {
      */
     private void merge(Commit commit1, Commit commit2) throws IOException {
         restoreBackup(commit1);
-        Path path = Paths.get(GutUtils.getRepoPath(), commit2.id);
-        File dst = new File(GutUtils.getCurrentPath());
-        File src = new File(path.toString());
-        FileUtils.copyDirectory(src, dst, pathname -> path.startsWith(GutUtils.getRepoPath()));
+        for (String file: commit2.getFiles()){
+            if(!commit1.containsFile(file)){
+                String backupPath = getFileRevisoinPath(commit2.getFileRevision(file));
+                FileUtils.copyFile(new File(backupPath), new File(file));
+            }
+        }
     }
 
-
+    /**
+     * get path to file backup by his revision
+     * @param revision - id of revision
+     * @return path to backup
+     */
+    private String getFileRevisoinPath(String revision){
+        return Paths.get(GutUtils.getRepoPath(), revision).toString();
+    }
 }

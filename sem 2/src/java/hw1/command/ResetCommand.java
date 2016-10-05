@@ -8,34 +8,28 @@ import hw1.structure.StateManager;
 import java.io.IOException;
 
 /**
- * Created by Mark on 25.09.2016.
- * <p>
- * represents merge command
+ * Created by Mark on 05.10.2016.
  */
-class MergeCommand implements Command {
-    private final String branch;
+public class ResetCommand implements Command {
+    private final String[] params;
 
-    public MergeCommand(String[] params) {
-        if (params.length != 1) {
-            branch = null;
-        } else {
-            branch = params[0];
-        }
+    public ResetCommand(String[] params){
+        this.params = params;
     }
 
     @Override
     public void execute() throws MalformedCommandException {
+        if(params.length != 1){
+            throw new MalformedCommandException("Reset command takes exactly one argument - filename");
+        }
         if (!GutUtils.repoInitialized()) {
             throw new NoSuchRepositoryException();
         }
-        if (branch == null) {
-            throw new MalformedCommandException("merge command expects exactly one argument");
-        }
         try {
             StateManager stateManager = StateManager.load();
-            stateManager.mergeBranch(branch);
+            stateManager.reset(params[0]);
             stateManager.close();
-            System.out.println("Merge successful. You can now commit changes");
+            System.out.println("File successfully reset");
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }

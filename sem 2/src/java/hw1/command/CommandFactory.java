@@ -34,8 +34,19 @@ public class CommandFactory {
                 return new LogCommand();
             case "merge":
                 return new MergeCommand(params);
+            case "add":
+                return new AddCommand(params);
+            case "status":
+                return new StatusCommand();
+            case "reset":
+                return new ResetCommand(params);
+            case "rm":
+                return new RemoveCommand(params);
+            case "clean":
+                return new CleanCommand();
+            default:
+                System.out.println("Unknown command provided");
+                return new HelpCommand();
         }
-        System.out.println("Unknown command provided");
-        return new HelpCommand();
     }
 }

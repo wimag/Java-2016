@@ -3,7 +3,6 @@ package hw1.command;
 import hw1.GutUtils;
 import hw1.exceptions.DuplicateBranchException;
 import hw1.exceptions.RepositoryOverrideException;
-import hw1.structure.Commit;
 import hw1.structure.StateManager;
 
 import java.io.IOException;
@@ -30,9 +29,8 @@ class InitCommand implements Command {
         }
         StateManager stateManager = new StateManager();
         String masterBranchName = "master";
-        stateManager.createBranch(masterBranchName);
         try {
-            stateManager.commit(new Commit("Initial commit", masterBranchName));
+            stateManager.init(masterBranchName);
             stateManager.close();
         } catch (IOException e) {
             e.printStackTrace();
