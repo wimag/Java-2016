@@ -23,9 +23,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class SuperServer implements Runnable {
     private volatile boolean stopped = false;
-    private AtomicBoolean started = new AtomicBoolean(false);
-    private ServerSocket listener;
-    private ExecutorService pool = Executors.newCachedThreadPool();
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final ServerSocket listener;
+    private final ExecutorService pool = Executors.newCachedThreadPool();
 
     public SuperServer(int port) throws IOException {
         listener = new ServerSocket(port);
@@ -49,7 +49,7 @@ public class SuperServer implements Runnable {
      * @throws IOException
      */
     public void stop() throws IOException {
-        this.stopped = true;
+        stopped = true;
         listener.close();
         pool.shutdown();
     }
@@ -91,7 +91,6 @@ public class SuperServer implements Runnable {
 
         @Override
         public void run() {
-            socket.isClosed();
             try {
                 DataInputStream is = new DataInputStream(socket.getInputStream());
                 DataOutputStream os = new DataOutputStream(socket.getOutputStream());
@@ -101,15 +100,18 @@ public class SuperServer implements Runnable {
                     String path = is.readUTF();
                     query = QueryFactory.create(type, path);
                     query.respond(os);
+                    os.flush();
                 }
 
             } catch (IOException e) {
+                e.printStackTrace();
                 System.err.println("Error while communication with client");
-            }
-            try {
-                socket.close();
-            } catch (IOException e) {
-                System.err.println("Unable to close socket");
+            }finally {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    System.err.println("Unable to close socket");
+                }
             }
         }
     }

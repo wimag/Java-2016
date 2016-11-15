@@ -1,7 +1,11 @@
 package server.Query;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,11 +25,17 @@ public class GetServerQuery implements ServerQuery {
     public void respond(DataOutputStream stream) throws IOException {
         Path path = Paths.get(filename);
         if (Files.exists(path) && !Files.isDirectory(path)) {
-            byte[] bytes = Files.readAllBytes(path);
-            stream.writeInt(bytes.length);
-            stream.write(bytes);
+            long size = Files.size(path);
+            stream.writeLong(Files.size(path));
+
+            FileInputStream fis = new FileInputStream(filename);
+            long copied = IOUtils.copyLarge(fis, stream, 0, size);
+
+            if (copied != size){
+                System.err.println("Failed to copy file correctly");
+            }
         } else {
-            stream.writeInt(0);
+            stream.writeLong(0);
         }
     }
 }

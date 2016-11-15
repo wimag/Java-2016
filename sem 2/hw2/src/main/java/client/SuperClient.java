@@ -2,10 +2,9 @@ package client;
 
 import commons.Commands;
 import exceptions.ConnectionIsDeadException;
+import org.apache.commons.io.IOUtils;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +22,7 @@ public class SuperClient {
      * @param port to connect to
      * @throws IOException
      */
-    public void connect(String host, Integer port) throws IOException {
+    public void connect(String host, int port) throws IOException {
         socket = new Socket(host, port);
     }
 
@@ -42,6 +41,7 @@ public class SuperClient {
         DataInputStream is = new DataInputStream(socket.getInputStream());
         os.writeInt(Commands.LIST);
         os.writeUTF(path);
+        os.flush();
         int n = is.readInt();
         List<ServerFile> response = new ArrayList<>();
         for (int i = 0; i < n; i++) {
@@ -53,25 +53,56 @@ public class SuperClient {
     }
 
     /**
+     * create a local copy of server file
+     * @param path - to server file, file at the
+     *             same local location will be created
+     * @return true of operation succeeded, false otherwise
+     */
+    public boolean getFile(String path) throws IOException {
+        return getFile(path, path);
+    }
+
+    /**
      * execute read command
      *
-     * @param path to file on the server
-     * @return byte[] - representation of the file
-     * zero length array if no such file on the server
+     * @param serverPath - path to file on the server
+     * @param localPath - path, where local copy will be stored
+     * @return boolean - true if operaion succeeded,
+     *                   false otherwise
      * @throws IOException
      */
-    public byte[] getFile(String path) throws IOException {
+    public boolean getFile(String serverPath, String localPath) throws IOException {
         if (socket.isClosed()) {
             throw new ConnectionIsDeadException();
         }
         DataOutputStream os = new DataOutputStream(socket.getOutputStream());
         DataInputStream is = new DataInputStream(socket.getInputStream());
         os.writeInt(Commands.GET);
-        os.writeUTF(path);
-        int n = is.readInt();
-        byte[] response = new byte[n];
-        is.read(response);
-        return response;
+        os.writeUTF(serverPath);
+        os.flush();
+
+        DataOutputStream fos;
+        try {
+            long n = is.readLong();
+            if(n == 0){
+                System.out.println("No such file on server:" + serverPath);
+                return false;
+            }
+
+            fos = new DataOutputStream(new FileOutputStream(new File(localPath)));
+
+            long copied = IOUtils.copyLarge(is, fos, 0, n);
+            if(copied != n){
+                System.err.println("Data stream corrupted. See result in corresponding file serverPath");
+            }
+            fos.close();
+        } catch (IOException e){
+            System.err.println("Unable to create or write to file " + localPath);
+            return false;
+        }
+
+
+        return true;
     }
 
     /**
@@ -82,8 +113,9 @@ public class SuperClient {
     public void disconnect() throws IOException {
         DataOutputStream os = new DataOutputStream(socket.getOutputStream());
         os.writeInt(Commands.EXIT);
-        os.writeBytes("I'm leaving");
-
+        os.writeUTF("I'm leaving");
+        os.flush();
+        socket.close();
     }
 
     /**
@@ -91,11 +123,11 @@ public class SuperClient {
      * a pair of path and a flag,
      * whether it is a directory
      */
-    public static class ServerFile {
+    public static final class ServerFile {
         public final String path;
         public final Boolean isDirectory;
 
-        public ServerFile(String path, Boolean isDirectory) {
+        ServerFile(String path, Boolean isDirectory) {
             this.path = path;
             this.isDirectory = isDirectory;
         }

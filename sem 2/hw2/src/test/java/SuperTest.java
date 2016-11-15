@@ -6,6 +6,8 @@ import server.SuperServer;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 
@@ -37,19 +39,23 @@ public class SuperTest {
     @Test
     public void testList() throws IOException {
         final int TEST_LIST_PORT = 1234;
-        final String TEST_LIST_PATH = ".";
+        final String TEST_LIST_REAL_PATH = ".";
+        final String TEST_LIST_FAKE_PATH = "NONEXISTENT_DIR";
         SuperServer server = new SuperServer(TEST_LIST_PORT);
         server.start();
         SuperClient client = new SuperClient();
         client.connect("localhost", TEST_LIST_PORT);
-        List<SuperClient.ServerFile> files = client.listDir(".");
-        Collection<File> realFiles = FileUtils.listFilesAndDirs(new File(TEST_LIST_PATH), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
-        for (SuperClient.ServerFile file : files) {
+        List<SuperClient.ServerFile> toneOfFiles = client.listDir(TEST_LIST_REAL_PATH);
+        Collection<File> realFiles = FileUtils.listFilesAndDirs(new File(TEST_LIST_REAL_PATH), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+        for (SuperClient.ServerFile file : toneOfFiles) {
             File realFile = new File(file.path);
             assertEquals(realFile.isDirectory(), file.isDirectory);
             assertTrue(realFiles.contains(realFile));
         }
-        assertEquals(realFiles.size(), files.size());
+        assertEquals(realFiles.size(), toneOfFiles.size());
+
+        List<SuperClient.ServerFile> emptyFiles = client.listDir(TEST_LIST_FAKE_PATH);
+        assertEquals(0, emptyFiles.size());
         client.disconnect();
         server.stop();
     }
@@ -66,22 +72,46 @@ public class SuperTest {
         final int TEST_GET_PORT = 1235;
         final int TEST_NUM = 20;
         final String ALL_PATH = ".";
+        final String NONEXISTENT_PATH = "NONEXISTENT.txt";
+
         Collection<File> realFiles = FileUtils.listFilesAndDirs(new File(ALL_PATH), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
         SuperServer server = new SuperServer(TEST_GET_PORT);
         server.start();
         SuperClient client = new SuperClient();
         client.connect("localhost", TEST_GET_PORT);
-        for (int i = 0; i < TEST_NUM; i++) {
-            File testFile = randomElement(realFiles);
-            byte[] file = client.getFile(testFile.getPath());
-            if (testFile.isDirectory()) {
-                assertEquals(0, file.length);
-            } else {
-                assertArrayEquals(FileUtils.readFileToByteArray(testFile), file);
+
+        for(File file: realFiles){
+            if(file.getPath().endsWith("cpy")){
+                try{
+                    Files.delete(Paths.get(file.getPath()));
+                }catch (IOException e){
+                    System.err.println("Unable to delete created file");
+                }
             }
         }
+
+        for (int i = 0; i < TEST_NUM; i++) {
+            File testFile = randomElement(realFiles);
+            if (testFile.isDirectory()){
+                continue;
+            }
+            String path = testFile.getPath();
+            String newPath = testFile.getPath() + "cpy";
+            assertTrue(client.getFile(path, newPath));
+            try {
+                assertArrayEquals(FileUtils.readFileToByteArray(testFile), FileUtils.readFileToByteArray(testFile));
+            } finally {
+                try{
+                    Files.delete(Paths.get(newPath));
+                }catch (IOException e){
+                    System.err.println("Unable to delete created file");
+                }
+            }
+        }
+
+        assertFalse(client.getFile(NONEXISTENT_PATH));
         client.disconnect();
         server.stop();
-
     }
+
 }
