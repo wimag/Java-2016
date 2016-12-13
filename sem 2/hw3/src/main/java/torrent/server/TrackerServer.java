@@ -17,6 +17,7 @@ import java.io.InputStreamReader;
  */
 public class TrackerServer extends Server {
     private static TrackerServer instance;
+    private static volatile boolean stopped = false;
     static {
         try {
             instance = new TrackerServer(Config.SERVER_ADDRES.getPort());
@@ -35,9 +36,13 @@ public class TrackerServer extends Server {
 
     /**
      * run server in console
+     * @param runRepl - indicates of repl client needs to be started
      */
-    public static void runServer(){
+    public static void runServer(boolean runRepl){
         instance.start();
+        if(!runRepl){
+            return;
+        }
         try {
             instance.repl();
         } catch (IOException e) {
@@ -51,6 +56,17 @@ public class TrackerServer extends Server {
         }
     }
 
+    public static void runServer(){
+        runServer(true);
+    }
+
+    /**
+     * stop server
+     */
+    public static void stopServer() throws IOException {
+        stopped = true;
+    }
+
     /**
      * simple server reple
      * @throws IOException
@@ -58,7 +74,7 @@ public class TrackerServer extends Server {
     private void repl() throws IOException {
         System.out.println("Server started");
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        while(true){
+        while(!stopped){
             String line = br.readLine();
             String[] command = line.split(" ");
             switch (command[0]){
@@ -75,5 +91,5 @@ public class TrackerServer extends Server {
     public void stop() throws IOException {
         super.stop();
         ServerStorage.close();
-}
+    }
 }

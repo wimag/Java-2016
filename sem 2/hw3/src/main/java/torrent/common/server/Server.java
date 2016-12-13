@@ -101,7 +101,7 @@ public class Server implements Runnable{
 
                 os.close();
 
-            } catch (IOException e) {
+            } catch (IOException ignored) {
                 System.err.println("IO Error while communication with client");
             } finally {
                 try {

@@ -27,7 +27,6 @@ import java.util.List;
  */
 public class Client {
     private final ClientStorage storage;
-    private final short SERVER_PORT = 8081;
     private Socket socket;
     public Client(ClientStorage storage) {
         this.storage = storage;
@@ -96,6 +95,16 @@ public class Client {
     }
 
     public void downloadFile(int id, String filename, long size) throws IOException {
+        List<InetSocketAddress> addrs = getPeers(id);
+        ClientFile file = storage.createFile(filename, id, size);
+        FileDownloader downloader = new FileDownloader(file, id, addrs);
+        downloader.initDownload();
+    }
+
+    /**
+     * List peers of given file
+     */
+    public List<InetSocketAddress> getPeers(int id) throws IOException {
         connect();
         try{
             DataOutputStream os = new DataOutputStream(socket.getOutputStream());
@@ -103,26 +112,18 @@ public class Client {
             os.writeByte(TrackerQueryCodes.SOURCES_QUERY);
             os.writeInt(id);
             os.flush();
-            int n = is.readInt();
-            List<InetSocketAddress> addrs = new ArrayList<>();
-            for (int i = 0; i < n; i++) {
-                int addess = is.readInt();
-                short port = is.readShort();
-                InetAddress inetAddress = InetAddress.getByAddress(BigInteger.valueOf(addess).toByteArray());
-                addrs.add(new InetSocketAddress(inetAddress, port));
-            }
-            ClientFile file = storage.createFile(filename, id, size);
-            FileDownloader downloader = new FileDownloader(file, id, addrs);
-            downloader.initDownload();
+            List<InetSocketAddress> addrs = getPeersFromStream(is);
+
             os.writeByte(TrackerQueryCodes.EXIT_QUERY);
             os.flush();
+            return addrs;
         } catch (IOException e){
-            System.err.println("Unable to download file");
+            System.err.println("Unable to get peers");
+            return null;
         } finally {
             disconnect();
         }
     }
-
 
     /**
      * Perform connection to remote
@@ -146,6 +147,14 @@ public class Client {
     private void disconnect() {
         try{
             if (socket != null) {
+                if(!socket.isClosed()){
+                    socket.getOutputStream().flush();
+                }
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 socket.close();
             }
         } catch (IOException e){
@@ -154,4 +163,15 @@ public class Client {
 
     }
 
+    private List<InetSocketAddress> getPeersFromStream(DataInputStream is) throws IOException {
+        int n = is.readInt();
+        List<InetSocketAddress> addrs = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            int addess = is.readInt();
+            short port = is.readShort();
+            InetAddress inetAddress = InetAddress.getByAddress(BigInteger.valueOf(addess).toByteArray());
+            addrs.add(new InetSocketAddress(inetAddress, port));
+        }
+        return addrs;
+    }
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -63,13 +64,15 @@ public class ClientFile implements Serializable{
         RandomAccessFile raf = new RandomAccessFile(path, "r");
         raf.seek(part * CHUNK_SIZE);
         raf.readFully(res);
+        raf.close();
         return res;
     }
 
     public synchronized void setPart(int part, byte[] bytes) throws IOException{
-        RandomAccessFile raf = new RandomAccessFile(path, "w");
+        RandomAccessFile raf = new RandomAccessFile(path, "rw");
         raf.seek(part * CHUNK_SIZE);
         raf.write(bytes);
+        raf.close();
     }
 
     /**
@@ -80,6 +83,13 @@ public class ClientFile implements Serializable{
         return parts;
     }
 
+    /**
+     * Check if file is downloaded
+     * @return true if files is present as a whole
+     */
+    public synchronized boolean isDownloaded(){
+        return parts == getAvailableParts().size();
+    }
 
     /**
      * Get size of giver part

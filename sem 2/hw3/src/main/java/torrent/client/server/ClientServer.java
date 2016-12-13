@@ -20,13 +20,14 @@ public class ClientServer extends Server {
     private final HeartBeat heartBeat;
     private final ClientStorage storage;
     private final int port;
+    public final int HEARTBEAT_INTERVAL = 5000;
 
     public ClientServer(int port, ClientStorage storage) throws IOException {
         super(port, new ClientQueryFactory());
         ((ClientQueryFactory)queryFactory).setClientStorage(storage);
         this.storage = storage;
         this.port = port;
-        heartBeat = new HeartBeat(5 * 1000);
+        heartBeat = new HeartBeat(HEARTBEAT_INTERVAL);
     }
 
     @Override

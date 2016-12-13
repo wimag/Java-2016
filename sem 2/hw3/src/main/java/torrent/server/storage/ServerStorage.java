@@ -1,9 +1,12 @@
 package torrent.server.storage;
 
+import org.apache.commons.io.FileUtils;
 import torrent.common.storage.ServerFile;
 
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -85,7 +88,7 @@ public class ServerStorage implements Serializable {
      * before exiting application
      */
     public static void close(){
-        ObjectOutputStream oos = null;
+        ObjectOutputStream oos;
         try {
             oos = new ObjectOutputStream(new FileOutputStream(path));
             oos.writeObject(storage);
@@ -94,7 +97,5 @@ public class ServerStorage implements Serializable {
             System.err.println("Failed to dump Server storage to disk");
         }
     }
-
-
 
 }

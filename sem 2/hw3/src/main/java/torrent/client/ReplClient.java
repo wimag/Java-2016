@@ -94,6 +94,10 @@ public class ReplClient {
         }
     }
 
+    public void list(){
+
+    }
+
     private void printHelp() {
         System.out.println("Usage: ");
         System.out.println("list - to list files available for download");

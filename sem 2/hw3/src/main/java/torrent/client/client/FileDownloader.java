@@ -34,7 +34,7 @@ public class FileDownloader {
             pending.add(i);
         }
         clientsWithPart = new CopyOnWriteArrayList<>();
-        for (int i = 0; i < peers.size(); i++) {
+        for (int i = 0; i < file.numberOfParts(); i++) {
             clientsWithPart.add(new CopyOnWriteArrayList<>());
         }
 
@@ -105,7 +105,7 @@ public class FileDownloader {
         public void run() {
             Socket socket = null;
             while(!pending.isEmpty()){
-                Integer part = null;
+                Integer part;
                 try {
                     part = pending.poll(POLL_TIMEOUT, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
@@ -122,6 +122,7 @@ public class FileDownloader {
                     DataInputStream is = new DataInputStream(socket.getInputStream());
                     os.writeByte(ClientQueryCodes.GET_QUERY);
                     os.writeInt(fileId);
+                    os.writeInt(part);
                     os.flush();
                     byte[] raw = new byte[file.getPartSize(part)];
                     is.readFully(raw);
