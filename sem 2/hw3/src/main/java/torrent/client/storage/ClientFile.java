@@ -11,8 +11,8 @@ import java.util.List;
  * Created by Mark on 09.11.2016.
  */
 public class ClientFile implements Serializable{
-    private final String path;
-    private final long size;
+    public final String path;
+    public final long size;
     private final int parts;
     private final boolean[] downloaded;
     public final long CHUNK_SIZE = 10 * 1024 * 1024; // 10 MB Chunk
@@ -44,6 +44,20 @@ public class ClientFile implements Serializable{
         return res;
     }
 
+    /**
+     * Get downloaded ration for this file
+     * @return
+     */
+    public synchronized double getDownloadedRatio(){
+        int present = 0;
+        for (int i = 0; i < parts; i++) {
+            if(downloaded[i]){
+               present ++;
+            }
+        }
+        return (double) present / (double) parts;
+    }
+
 
     /**
      * Check if this storage has required file part
@@ -73,6 +87,7 @@ public class ClientFile implements Serializable{
         raf.seek(part * CHUNK_SIZE);
         raf.write(bytes);
         raf.close();
+        downloaded[part] = true;
     }
 
     /**

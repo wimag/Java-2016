@@ -1,7 +1,5 @@
 package torrent.client.storage;
 
-import torrent.client.client.Client;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,11 +30,15 @@ public class ClientStorage implements Serializable {
         return files.get(id);
     }
 
+    public synchronized boolean hasFile(int id){
+        return files.containsKey(id);
+    }
+
     /**
      * get All file ids
      * @return collection containing all file ids
      */
-    public synchronized List<Integer> getAllIds(){
+    public synchronized ArrayList<Integer> getAllIds(){
         return new ArrayList<>(files.keySet());
     }
 

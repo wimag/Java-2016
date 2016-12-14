@@ -65,6 +65,7 @@ public class TrackerServer extends Server {
      */
     public static void stopServer() throws IOException {
         stopped = true;
+        instance.stop();
     }
 
     /**
