@@ -40,6 +40,9 @@ public class LocalFilesTracker implements ListTracker {
     public FileMetaInf getMetaFor(int id) {
         ArrayList<Integer> ids = storage.getAllIds();
         Collections.sort(ids);
+        if(!ids.contains(id)){
+            return null;
+        }
         int readID = ids.get(id);
         ClientFile file = storage.getFile(readID);
         String name = (new File(file.path)).getName();

@@ -140,6 +140,9 @@ public class MainScreen implements Screen {
      * @param meta
      */
     public synchronized void showMetaInf(FileMetaInf meta){
+        if(meta == null){
+            return;
+        }
         filename.setText(meta.formatName());
         filesize.setText(meta.formatSize());
         selectedFileMeta = meta;
