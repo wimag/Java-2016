@@ -45,7 +45,6 @@ public class GuiClient implements Client {
         try {
             other = SimpleClient.nextInstance();
             other.start();
-            other.clientClient.upload("E:\\Large stuff\\tmp\\res1");
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }

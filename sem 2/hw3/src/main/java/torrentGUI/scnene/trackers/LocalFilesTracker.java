@@ -28,7 +28,6 @@ public class LocalFilesTracker implements ListTracker {
     @Override
     public void onPick(int id) {
         parent.showMetaInf(getMetaFor(id));
-        //TODO - show progress
     }
 
     @Override
@@ -40,7 +39,7 @@ public class LocalFilesTracker implements ListTracker {
     public FileMetaInf getMetaFor(int id) {
         ArrayList<Integer> ids = storage.getAllIds();
         Collections.sort(ids);
-        if(!ids.contains(id)){
+        if(id == -1 || !ids.contains(id)){
             return null;
         }
         int readID = ids.get(id);

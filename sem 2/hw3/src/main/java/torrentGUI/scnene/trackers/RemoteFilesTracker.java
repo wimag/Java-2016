@@ -50,7 +50,7 @@ public class RemoteFilesTracker implements ListTracker{
      */
     @Override
     public FileMetaInf getMetaFor(int id){
-        if(files.size() < id){
+        if(id == -1 || files.size() < id){
             return null;
         }
         ServerFile file = files.get(id);
