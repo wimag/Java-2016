@@ -1,5 +1,6 @@
 import torrent.client.ReplClient;
 import torrent.server.TrackerServer;
+import torrentGUI.GuiClient;
 
 import java.io.IOException;
 
@@ -14,17 +15,30 @@ public class Main {
             System.out.println("client <port> - to run client on given port");
             return;
         }
-        if(args[0].equals("server")){
-            TrackerServer.runServer();
-        } else {
-            try {
-                int port = Integer.valueOf(args[1]);
-                new ReplClient(port).start();
-            } catch (NumberFormatException e){
-                System.err.println(args[1] + " is not a valid porn");
-            } catch (ClassNotFoundException | IOException e) {
-                e.printStackTrace();
-            }
+        switch (args[0]){
+            case "server":
+                TrackerServer.runServer();
+                break;
+            case "client":
+                try {
+                    int port = Integer.valueOf(args[1]);
+                    new ReplClient(port).start();
+                } catch (NumberFormatException e){
+                    System.err.println(args[1] + " is not a valid port");
+                } catch (ClassNotFoundException | IOException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case "gui":
+                try {
+                    int port = Integer.valueOf(args[1]);
+                    new GuiClient(port).start();
+                } catch (NumberFormatException e){
+                    System.err.println(args[1] + " is not a valid port");
+                } catch (ClassNotFoundException | IOException e) {
+                    e.printStackTrace();
+                }
         }
+
     }
 }

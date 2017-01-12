@@ -22,10 +22,18 @@ public class GuiClient implements Client {
     public final ClientServer server;
     public final ClientClient client;
 
+    private final boolean debug;
+
     public GuiClient(int port) throws IOException, ClassNotFoundException {
+        this(port, false);
+    }
+
+    public GuiClient(int port, boolean debug) throws IOException, ClassNotFoundException {
         storage = ClientStorageFactory.createClientStorage(port);
         server = new ClientServer(port, storage);
         client = new ClientClient(storage);
+        this.debug = debug;
+
         LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
         config.width = 600;
         config.height = 400;
@@ -33,7 +41,6 @@ public class GuiClient implements Client {
         //config.resizable = false;
         GUI gui = new GUI(this);
         new LwjglApplication(gui, config);
-        start();
     }
 
     /**
@@ -41,14 +48,14 @@ public class GuiClient implements Client {
      */
     public void start() throws IOException {
         server.start();
-        //DEBUG
-        try {
-            other = SimpleClient.nextInstance();
-            other.start();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        if(debug){
+            try {
+                other = SimpleClient.nextInstance();
+                other.start();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
         }
-
     }
 
     /**
@@ -59,8 +66,11 @@ public class GuiClient implements Client {
         server.stop();
         storage.close();
         //DEBUG
-        TrackerServer.stopServer();
-        other.stop();
+        if(debug){
+            TrackerServer.stopServer();
+            other.stop();
+        }
+
     }
 
     //DEBUG
@@ -68,6 +78,7 @@ public class GuiClient implements Client {
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         TrackerServer.runServer(false);
-        new GuiClient(2234);
+        GuiClient client = new GuiClient(2234);
+        client.start();
     }
 }

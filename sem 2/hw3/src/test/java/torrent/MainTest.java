@@ -120,7 +120,7 @@ public class MainTest {
 
         }
         for(int i = 1; i < MAX_CLIENTS; i++){
-            while (clients[i].storage.getFile(id).isDownloaded()){
+            while (!clients[i].storage.getFile(id).isDownloaded()){
                 Thread.sleep(500);
             }
             TestUtils.assertEqualsFileHashes(copies[0], copies[i]);
