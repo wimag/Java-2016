@@ -1,6 +1,6 @@
 package torrent.client;
 
-import torrent.client.client.Client;
+import torrent.client.client.ClientClient;
 import torrent.client.server.ClientServer;
 import torrent.client.storage.ClientStorage;
 import torrent.client.storage.ClientStorageFactory;
@@ -14,14 +14,14 @@ import java.util.List;
 /**
  * Created by Mark on 09.11.2016.
  */
-public class ReplClient {
+public class ReplClient implements Client {
     private final ClientStorage storage;
     private final ClientServer server;
-    private final Client client;
+    private final ClientClient clientClient;
     public ReplClient(int port) throws IOException, ClassNotFoundException {
         storage = ClientStorageFactory.createClientStorage(port);
         server = new ClientServer(port, storage);
-        client = new Client(storage);
+        clientClient = new ClientClient(storage);
     }
 
     /**
@@ -44,7 +44,7 @@ public class ReplClient {
                 String[] command = line.split(" ");
                 switch (command[0]){
                     case "list":
-                        List<ServerFile> serverFiles = client.listFiles();
+                        List<ServerFile> serverFiles = clientClient.listFiles();
                         for(ServerFile file: serverFiles){
                             System.out.println("File Name: " + file.name);
                             System.out.println("File ID: " + file.id);
@@ -69,7 +69,7 @@ public class ReplClient {
                             System.err.println("Invalud file id or size");
                             break;
                         }
-                        client.downloadFile(id, path, size);
+                        clientClient.downloadFile(id, path, size);
                         System.out.println("Download initiated in background");
                         break;
                     case  "upload":
@@ -77,7 +77,7 @@ public class ReplClient {
                             System.err.println("Please specify file path");
                             break;
                         }
-                        int uploaded = client.upload(command[1]);
+                        int uploaded = clientClient.upload(command[1]);
                         System.out.println("Uploaded as file with id " + uploaded);
                         break;
                     case "quit":

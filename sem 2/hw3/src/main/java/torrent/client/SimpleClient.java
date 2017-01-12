@@ -1,38 +1,36 @@
-import torrent.client.client.Client;
+package torrent.client;
+
+import torrent.client.client.ClientClient;
 import torrent.client.server.ClientServer;
 import torrent.client.storage.ClientStorage;
 import torrent.client.storage.ClientStorageFactory;
-import torrent.common.storage.ServerFile;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.List;
 
 /**
  * Created by Mark on 13.12.2016.
  */
-public class TestClient {
-    final ClientStorage storage;
-    final ClientServer server;
-    final Client client;
+public class SimpleClient implements Client {
+    public final ClientStorage storage;
+    public final ClientServer server;
+    public final ClientClient clientClient;
     private static volatile Integer port = 1234;
 
-    public TestClient(int port) throws IOException, ClassNotFoundException {
+    public SimpleClient(int port) throws IOException, ClassNotFoundException {
         storage = ClientStorageFactory.createClientStorage(port);
         server = new ClientServer(port, storage);
-        client = new Client(storage);
+        clientClient = new ClientClient(storage);
     }
 
     /**
-     * Start server and client repl
+     * Start server and client
      */
     public void start() throws IOException {
         server.start();
     }
 
     /**
-     * stop server and repl
+     * stop server
      * @throws IOException
      */
     public void stop() throws IOException {
@@ -40,7 +38,7 @@ public class TestClient {
         storage.close();
     }
 
-    public synchronized static TestClient nextInstance() throws IOException, ClassNotFoundException {
-        return new TestClient(port++);
+    public synchronized static SimpleClient nextInstance() throws IOException, ClassNotFoundException {
+        return new SimpleClient(port++);
     }
 }

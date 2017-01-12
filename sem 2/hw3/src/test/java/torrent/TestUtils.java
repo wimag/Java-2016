@@ -1,3 +1,5 @@
+package torrent;
+
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import torrent.common.storage.ServerFile;

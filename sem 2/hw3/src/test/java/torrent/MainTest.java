@@ -1,5 +1,8 @@
+package torrent;
+
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
+import torrent.client.SimpleClient;
 import torrent.common.storage.ServerFile;
 import torrent.server.TrackerServer;
 
@@ -18,7 +21,7 @@ public class MainTest {
     @Rule
     public final TemporaryFolder tmpFolder = new TemporaryFolder();
     private final int MAX_CLIENTS = 5;
-    private final TestClient clients[] = new TestClient[MAX_CLIENTS];
+    private final SimpleClient clients[] = new SimpleClient[MAX_CLIENTS];
 
     @BeforeClass
     public static void setup() throws IOException {
@@ -35,7 +38,7 @@ public class MainTest {
     @Before
     public void initClients() throws IOException, ClassNotFoundException {
         for(int i = 0; i < MAX_CLIENTS; i++){
-            clients[i] = TestClient.nextInstance();
+            clients[i] = SimpleClient.nextInstance();
             clients[i].start();
         }
     }
@@ -53,9 +56,9 @@ public class MainTest {
         File testFile = new File(folder, "1");
         int fileSize = 12345;
         TestUtils.createFile(testFile, fileSize);
-        int id = clients[0].client.upload(testFile.getAbsolutePath());
+        int id = clients[0].clientClient.upload(testFile.getAbsolutePath());
         for(int i = 0; i < MAX_CLIENTS; i++){
-            List<ServerFile> files = clients[i].client.listFiles();
+            List<ServerFile> files = clients[i].clientClient.listFiles();
             assertEquals(files.size(), 1);
             assertEquals(files.get(0).name, testFile.getAbsolutePath());
             assertEquals(files.get(0).size, fileSize);
@@ -70,11 +73,11 @@ public class MainTest {
         int fileSize = 12345;
         TestUtils.createFile(testFile, fileSize);
         for(int i = 0; i < MAX_CLIENTS; i++){
-            clients[i].client.upload(testFile.getAbsolutePath());
+            clients[i].clientClient.upload(testFile.getAbsolutePath());
         }
         List<List<ServerFile>> results = new ArrayList<>();
         for(int i = 0; i < MAX_CLIENTS; i++){
-            results.add(clients[i].client.listFiles());
+            results.add(clients[i].clientClient.listFiles());
         }
         for(int i = 1; i < MAX_CLIENTS; i++){
             assertEquals(results.get(i).size(), results.get(i-1).size());
@@ -96,16 +99,16 @@ public class MainTest {
         File testFileSmall = new File(folder, "1");
         File testFileSmallCopy = new File(folder, "2");
         TestUtils.createFile(testFileSmall, fileSize);
-        int id = clients[0].client.upload(testFileSmall.getAbsolutePath());
+        int id = clients[0].clientClient.upload(testFileSmall.getAbsolutePath());
         Thread.sleep(clients[0].server.HEARTBEAT_INTERVAL);
 
-        clients[1].client.downloadFile(id, testFileSmallCopy.getAbsolutePath(), fileSize);
+        clients[1].clientClient.downloadFile(id, testFileSmallCopy.getAbsolutePath(), fileSize);
         while (clients[1].storage.getFile(id).isDownloaded()){
             Thread.sleep(500);
         }
         Thread.sleep(clients[0].server.HEARTBEAT_INTERVAL);
         for(int i = 2; i < MAX_CLIENTS; i++){
-            List<InetSocketAddress> peers = clients[i].client.getPeers(id);
+            List<InetSocketAddress> peers = clients[i].clientClient.getPeers(id);
             assertEquals(peers.size(), 2);
         }
         File copies[] = new File[MAX_CLIENTS];
@@ -113,11 +116,11 @@ public class MainTest {
         copies[1] =  testFileSmallCopy;
         for(int i = 2; i < MAX_CLIENTS; i++){
             copies[i] = new File(folder, Integer.toString(i+1));
-            clients[i].client.downloadFile(id, copies[i].getAbsolutePath(), fileSize);
+            clients[i].clientClient.downloadFile(id, copies[i].getAbsolutePath(), fileSize);
 
         }
         for(int i = 1; i < MAX_CLIENTS; i++){
-            while (clients[i].storage.getFile(id).isDownloaded()){
+            while (!clients[i].storage.getFile(id).isDownloaded()){
                 Thread.sleep(500);
             }
             TestUtils.assertEqualsFileHashes(copies[0], copies[i]);

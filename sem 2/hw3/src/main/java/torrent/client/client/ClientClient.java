@@ -25,10 +25,10 @@ import java.util.List;
 /**
  * Created by Mark on 09.11.2016.
  */
-public class Client {
+public class ClientClient {
     private final ClientStorage storage;
     private Socket socket;
-    public Client(ClientStorage storage) {
+    public ClientClient(ClientStorage storage) {
         this.storage = storage;
     }
 
